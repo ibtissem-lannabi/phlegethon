@@ -451,10 +451,10 @@ contains
      do i=lbound(lgrid%qbar_cc,2),ubound(lgrid%qbar_cc,2)
 
        do iv=1,nvars
-        lgrid%qbar_cc(iv,i,j) = ( rp2* &
-        (lgrid%q_x1(iv,i,j)+lgrid%q_x1(iv,i+1,j)+lgrid%q_x2(iv,i,j)+lgrid%q_x2(iv,i,j+1)) + &
+        lgrid%qbar_cc(iv,i,j) = ( rp16*lgrid%qbar_cc(iv,i,j) + &
+        rp4*(lgrid%q_x1(iv,i,j)+lgrid%q_x1(iv,i+1,j)+lgrid%q_x2(iv,i,j)+lgrid%q_x2(iv,i,j+1)) + &
         (lgrid%q_cor(iv,i,j)+lgrid%q_cor(iv,i+1,j)+lgrid%q_cor(iv,i,j+1)+lgrid%q_cor(iv,i+1,j+1)) &
-        ) / rp12
+        ) / rp36
        end do
 
      end do
