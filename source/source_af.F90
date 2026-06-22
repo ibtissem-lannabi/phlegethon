@@ -208,7 +208,7 @@ module source
     coords_cc,coords_x1,coords_x2,coords_cor
     
     real(kind=rp), allocatable, dimension(:,:,:) :: &
-    qbar_cc,q_x1,q_x2,q_cor   
+    q_cc,qbar_cc,q_x1,q_x2,q_cor   
 
     real(kind=rp), allocatable, dimension(:,:,:) :: &
     flux_x1,flux_x2,flux_cor   
@@ -311,7 +311,8 @@ contains
     allocate(lgrid%coords_x1(1:2,lx1-ngc:ux1+1+ngc,lx2-ngc:ux2+ngc))
     allocate(lgrid%coords_x2(1:2,lx1-ngc:ux1+ngc,lx2-ngc:ux2+1+ngc))
     allocate(lgrid%coords_cor(1:2,lx1-ngc:ux1+1+ngc,lx2-ngc:ux2+1+ngc))
-
+ 
+    allocate(lgrid%q_cc(1:nvars,lx1-ngc:ux1+ngc,lx2-ngc:ux2+ngc))   
     allocate(lgrid%qbar_cc(1:nvars,lx1-ngc:ux1+ngc,lx2-ngc:ux2+ngc))
     allocate(lgrid%q_x1(1:nvars,lx1-ngc:ux1+1+ngc,lx2-ngc:ux2+ngc))
     allocate(lgrid%q_x2(1:nvars,lx1-ngc:ux1+ngc,lx2-ngc:ux2+1+ngc))
@@ -361,7 +362,8 @@ contains
     deallocate(lgrid%coords_x1)
     deallocate(lgrid%coords_x2)
     deallocate(lgrid%coords_cor)
-
+ 
+    deallocate(lgrid%q_cc)  
     deallocate(lgrid%qbar_cc)
     deallocate(lgrid%q_x1)
     deallocate(lgrid%q_x2)
@@ -451,7 +453,7 @@ contains
      do i=lbound(lgrid%qbar_cc,2),ubound(lgrid%qbar_cc,2)
 
        do iv=1,nvars
-        lgrid%qbar_cc(iv,i,j) = ( rp16*lgrid%qbar_cc(iv,i,j) + &
+        lgrid%qbar_cc(iv,i,j) = ( rp16*lgrid%q_cc(iv,i,j) + &
         rp4*(lgrid%q_x1(iv,i,j)+lgrid%q_x1(iv,i+1,j)+lgrid%q_x2(iv,i,j)+lgrid%q_x2(iv,i,j+1)) + &
         (lgrid%q_cor(iv,i,j)+lgrid%q_cor(iv,i+1,j)+lgrid%q_cor(iv,i,j+1)+lgrid%q_cor(iv,i+1,j+1)) &
         ) / rp36
@@ -636,11 +638,28 @@ contains
      offset(1) = 1
      offset(2) = 1
      call communicate_array(mgrid,nvars,lx1,ux1+1,lx2,ux2+1,ngc,lgrid%q_cor,offset,.false.)
-
+ 
      !---------------------------------------------------------------------------------------!
 
      ! apply boundary conditions here...
 
+     !---------------------------------------------------------------------------------------!
+
+     ! compute cell-centered point values
+
+     do j=lbound(lgrid%qbar_cc,3),ubound(lgrid%qbar_cc,3)
+      do i=lbound(lgrid%qbar_cc,2),ubound(lgrid%qbar_cc,2)
+
+       do iv=1,nvars
+        lgrid%q_cc(iv,i,j) = ( rp16*lgrid%qbar_cc(iv,i,j) + &
+        rp4*(lgrid%q_x1(iv,i,j)+lgrid%q_x1(iv,i+1,j)+lgrid%q_x2(iv,i,j)+lgrid%q_x2(iv,i,j+1)) + &
+        (lgrid%q_cor(iv,i,j)+lgrid%q_cor(iv,i+1,j)+lgrid%q_cor(iv,i,j+1)+lgrid%q_cor(iv,i+1,j+1)) &
+        ) / rp36
+       end do
+
+      end do
+     end do
+ 
      !---------------------------------------------------------------------------------------!
 
      ! cell-centered residuals
@@ -929,11 +948,17 @@ contains
        ! Dpq
 
        do iv=1,nvars
+
+#ifdef USE_DIFF1
         Dpq(iv) = oquart*lgrid%inv_dx1*( &
         rp4*(-rp9*lgrid%qbar_cc(iv,i-1,j)+rp2*(lgrid%q_x1(iv,i-1,j)+rp2*lgrid%q_x1(iv,i,j))) + &
         rp4*(lgrid%q_x2(iv,i-1,j)+lgrid%q_x2(iv,i-1,j+1)) + &
         lgrid%q_cor(iv,i-1,j)+lgrid%q_cor(iv,i,j)+lgrid%q_cor(iv,i,j+1)+lgrid%q_cor(iv,i-1,j+1) &
         )
+#elif defined(USE_DIFF2)
+        Dpq(iv) = lgrid%inv_dx1*(rp3*lgrid%q_x1(iv,i,j)-rp4*lgrid%q_cc(iv,i-1,j)+lgrid%q_x1(iv,i-1,j))
+#endif
+
        end do
 
        !-----------------------------------------------!
@@ -1000,6 +1025,8 @@ contains
        ! Dmq
 
        do iv=1,nvars
+
+#ifdef USE_DIFF1       
         Dmq(iv) = -oquart*lgrid%inv_dx1*( &
         -rp36*lgrid%qbar_cc(iv,i,j) + &
         rp8*(rp2*lgrid%q_x1(iv,i,j)+lgrid%q_x1(iv,i+1,j)) + &
@@ -1007,6 +1034,10 @@ contains
         rp4*(lgrid%q_x2(iv,i,j)+lgrid%q_x2(iv,i,j+1)) + &
         lgrid%q_cor(iv,i+1,j) + lgrid%q_cor(iv,i,j+1) + lgrid%q_cor(iv,i+1,j+1) &
         )
+#elif defined(USE_DIFF2)
+        Dmq(iv) = lgrid%inv_dx1*(-rp3*lgrid%q_x1(iv,i,j)+rp4*lgrid%q_cc(iv,i,j)-lgrid%q_x1(iv,i+1,j))
+#endif
+
        end do
 
        !-----------------------------------------------!
@@ -1200,11 +1231,17 @@ contains
        ! Dpq
 
        do iv=1,nvars
+
+#ifdef USE_DIFF1
         Dpq(iv) = oquart*lgrid%inv_dx2*( &
         rp4*(lgrid%q_x1(iv,i,j-1)-rp9*lgrid%qbar_cc(iv,i,j-1)+lgrid%q_x1(iv,i+1,j-1)) + &
         lgrid%q_cor(iv,i,j)+lgrid%q_cor(iv,i+1,j)+lgrid%q_cor(iv,i,j-1)+lgrid%q_cor(iv,i+1,j-1) + &
         rp8*(lgrid%q_x2(iv,i,j-1)+rp2*lgrid%q_x2(iv,i,j)) &
         )
+#elif defined(USE_DIFF2)
+        Dpq(iv) = lgrid%inv_dx2*(rp3*lgrid%q_x2(iv,i,j)-rp4*lgrid%q_cc(iv,i,j-1)+lgrid%q_x2(iv,i,j-1))
+#endif
+
        end do
 
        !-----------------------------------------------!
@@ -1271,11 +1308,17 @@ contains
        ! Dmq
 
        do iv=1,nvars
+
+#ifdef USE_DIFF1       
         Dmq(iv) = -oquart*lgrid%inv_dx2*( &
         rp4*(lgrid%q_x1(iv,i,j)-rp9*lgrid%qbar_cc(iv,i,j)+lgrid%q_x1(iv,i+1,j)) + &
         lgrid%q_cor(iv,i,j)+lgrid%q_cor(iv,i+1,j)+lgrid%q_cor(iv,i,j+1)+lgrid%q_cor(iv,i+1,j+1) + &
         rp8*(rp2*lgrid%q_x2(iv,i,j)+lgrid%q_x2(iv,i,j+1)) &
         )
+#elif defined(USE_DIFF2)
+        Dmq(iv) = lgrid%inv_dx2*(-rp3*lgrid%q_x2(iv,i,j)+rp4*lgrid%q_cc(iv,i,j)-lgrid%q_x2(iv,i,j+1))
+#endif
+
        end do
 
        !-----------------------------------------------!
@@ -1694,7 +1737,7 @@ contains
 
        do iv=1,nvars
         Dmq(iv) = lgrid%inv_dx2*( &
-        rp4*lgrid%q_x1(iv,i,j)-rp3*lgrid%q_cor(iv,i,j)-lgrid%q_cor(iv,i,j+1) &                
+        rp4*lgrid%q_x1(iv,i,j)-rp3*lgrid%q_cor(iv,i,j)-lgrid%q_cor(iv,i,j+1) &              
         )
        end do
 
