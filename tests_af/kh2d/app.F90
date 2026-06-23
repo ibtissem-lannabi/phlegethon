@@ -104,8 +104,8 @@ program test
   end do
  end do
 
- do j=lbound(lgrid%qbar_cc,3),ubound(lgrid%qbar_cc,3)
-  do i=lbound(lgrid%qbar_cc,2),ubound(lgrid%qbar_cc,2)
+ do j=lbound(lgrid%q_cc,3),ubound(lgrid%q_cc,3)
+  do i=lbound(lgrid%q_cc,2),ubound(lgrid%q_cc,2)
 
      x = lgrid%coords_cc(1,i,j)
      y = lgrid%coords_cc(2,i,j)
@@ -123,10 +123,10 @@ program test
      vx1 = mach0*(1.0_rp-2.0_rp*eta)
      vx2 = 0.1_rp*mach0*sin(2.0_rp*CONST_PI*x)
 
-     lgrid%qbar_cc(i_rhovx1,i,j) = rho0*vx1
-     lgrid%qbar_cc(i_rhovx2,i,j) = rho0*vx2
-     lgrid%qbar_cc(i_rho,i,j) = rho0
-     lgrid%qbar_cc(i_rhoe,i,j) = p0/(lgrid%gm-1.0_rp)+rph*rho0*(vx1**2+vx2**2)
+     lgrid%q_cc(i_rhovx1,i,j) = rho0*vx1
+     lgrid%q_cc(i_rhovx2,i,j) = rho0*vx2
+     lgrid%q_cc(i_rho,i,j) = rho0
+     lgrid%q_cc(i_rhoe,i,j) = p0/(lgrid%gm-1.0_rp)+rph*rho0*(vx1**2+vx2**2)
 
   end do
  end do

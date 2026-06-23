@@ -119,8 +119,8 @@ program test
   end do
  end do
 
- do j=lbound(lgrid%qbar_cc,3),ubound(lgrid%qbar_cc,3)
-  do i=lbound(lgrid%qbar_cc,2),ubound(lgrid%qbar_cc,2)
+ do j=lbound(lgrid%q_cc,3),ubound(lgrid%q_cc,3)
+  do i=lbound(lgrid%q_cc,2),ubound(lgrid%q_cc,2)
 
      x = lgrid%coords_cc(1,i,j)
      y = lgrid%coords_cc(2,i,j)
@@ -141,11 +141,11 @@ program test
      vx1 = -sin(phi)*uphi
      vx2 = cos(phi)*uphi
 
-     lgrid%qbar_cc(i_rhovx1,i,j) = vx1
-     lgrid%qbar_cc(i_rhovx2,i,j) = vx2
+     lgrid%q_cc(i_rhovx1,i,j) = vx1
+     lgrid%q_cc(i_rhovx2,i,j) = vx2
 
-     lgrid%qbar_cc(i_rho,i,j) = 1.0_rp
-     lgrid%qbar_cc(i_rhoe,i,j) = p/(lgrid%gm-1.0_rp)+rph*(vx1**2+vx2**2)
+     lgrid%q_cc(i_rho,i,j) = 1.0_rp
+     lgrid%q_cc(i_rhoe,i,j) = p/(lgrid%gm-1.0_rp)+rph*(vx1**2+vx2**2)
 
   end do
  end do
