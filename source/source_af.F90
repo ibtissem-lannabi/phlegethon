@@ -208,7 +208,7 @@ module source
     coords_cc,coords_x1,coords_x2,coords_cor
     
     real(kind=rp), allocatable, dimension(:,:,:) :: &
-    qbar_cc,q_x1,q_x2,q_cor   
+    q_cc,qbar_cc,q_x1,q_x2,q_cor   
 
     real(kind=rp), allocatable, dimension(:,:,:) :: &
     flux_x1,flux_x2,flux_cor   
@@ -217,7 +217,10 @@ module source
     res_cc,res_x1,res_x2,res_cor   
 
     real(kind=rp), allocatable, dimension(:,:,:) :: &
-    qbar0_cc,q0_x1,q0_x2,q0_cor   
+    qbar0_cc,q0_x1,q0_x2,q0_cor
+    
+    real(kind=rp), allocatable, dimension(:,:,:) :: &
+    grav_cc,grav_x1,grav_x2,grav_cor
 
  end type locgrid
  
@@ -313,7 +316,8 @@ contains
     allocate(lgrid%coords_x1(1:2,lx1-ngc:ux1+1+ngc,lx2-ngc:ux2+ngc))
     allocate(lgrid%coords_x2(1:2,lx1-ngc:ux1+ngc,lx2-ngc:ux2+1+ngc))
     allocate(lgrid%coords_cor(1:2,lx1-ngc:ux1+1+ngc,lx2-ngc:ux2+1+ngc))
-
+ 
+    allocate(lgrid%q_cc(1:nvars,lx1-ngc:ux1+ngc,lx2-ngc:ux2+ngc))   
     allocate(lgrid%qbar_cc(1:nvars,lx1-ngc:ux1+ngc,lx2-ngc:ux2+ngc))
     allocate(lgrid%q_x1(1:nvars,lx1-ngc:ux1+1+ngc,lx2-ngc:ux2+ngc))
     allocate(lgrid%q_x2(1:nvars,lx1-ngc:ux1+ngc,lx2-ngc:ux2+1+ngc))
@@ -327,6 +331,11 @@ contains
     allocate(lgrid%res_x1(1:nvars,lx1:ux1+1,lx2:ux2))
     allocate(lgrid%res_x2(1:nvars,lx1:ux1,lx2:ux2+1))
     allocate(lgrid%res_cor(1:nvars,lx1:ux1+1,lx2:ux2+1))
+
+    allocate(lgrid%grav_cc(1:2,lx1-ngc:ux1+ngc,lx2-ngc:ux2+ngc))
+    allocate(lgrid%grav_x1(1:2,lx1-ngc:ux1+1+ngc,lx2-ngc:ux2+ngc))
+    allocate(lgrid%grav_x2(1:2,lx1-ngc:ux1+ngc,lx2-ngc:ux2+1+ngc))
+    allocate(lgrid%grav_cor(1:2,lx1-ngc:ux1+1+ngc,lx2-ngc:ux2+1+ngc))
 
     allocate(lgrid%qbar0_cc(1:nvars,lx1:ux1,lx2:ux2))  
     allocate(lgrid%q0_x1(1:nvars,lx1:ux1+1,lx2:ux2))
@@ -363,7 +372,8 @@ contains
     deallocate(lgrid%coords_x1)
     deallocate(lgrid%coords_x2)
     deallocate(lgrid%coords_cor)
-
+ 
+    deallocate(lgrid%q_cc)  
     deallocate(lgrid%qbar_cc)
     deallocate(lgrid%q_x1)
     deallocate(lgrid%q_x2)
@@ -377,6 +387,11 @@ contains
     deallocate(lgrid%res_x1)
     deallocate(lgrid%res_x2)
     deallocate(lgrid%res_cor)
+
+    deallocate(lgrid%grav_cc)
+    deallocate(lgrid%grav_x1)
+    deallocate(lgrid%grav_x2)
+    deallocate(lgrid%grav_cor)
 
     deallocate(lgrid%qbar0_cc)  
     deallocate(lgrid%q0_x1)
@@ -453,10 +468,10 @@ contains
      do i=lbound(lgrid%qbar_cc,2),ubound(lgrid%qbar_cc,2)
 
        do iv=1,nvars
-        lgrid%qbar_cc(iv,i,j) = ( rp2* &
-        (lgrid%q_x1(iv,i,j)+lgrid%q_x1(iv,i+1,j)+lgrid%q_x2(iv,i,j)+lgrid%q_x2(iv,i,j+1)) + &
+        lgrid%qbar_cc(iv,i,j) = ( rp16*lgrid%q_cc(iv,i,j) + &
+        rp4*(lgrid%q_x1(iv,i,j)+lgrid%q_x1(iv,i+1,j)+lgrid%q_x2(iv,i,j)+lgrid%q_x2(iv,i,j+1)) + &
         (lgrid%q_cor(iv,i,j)+lgrid%q_cor(iv,i+1,j)+lgrid%q_cor(iv,i,j+1)+lgrid%q_cor(iv,i+1,j+1)) &
-        ) / rp12
+        ) / rp36
        end do
 
      end do
@@ -482,6 +497,7 @@ contains
        if(mod(lgrid%step,info_terminal_rate)==0) &
        write(*,'("| step=",I8.8," | time=",E9.3," | dt=",E9.3,"| t/tmax=",E9.3," |")') &
        lgrid%step,lgrid%time,lgrid%dt,lgrid%time/tmax
+
       endif
 
       if((lgrid%time+lgrid%dt)>tmax) then
@@ -553,6 +569,7 @@ contains
     real(kind=rp) :: vn_cor, v1_cor, v2_cor
     real(kind=rp) :: vn_x1, v1_x1, v2_x1
     real(kind=rp) :: vn_x2, v1_x2, v2_x2
+    real(rp) :: rho_cc, rhovx1_cc, rhovx2_cc
 
     rk_stages = 3
 
@@ -644,7 +661,7 @@ contains
      offset(1) = 1
      offset(2) = 1
      call communicate_array(mgrid,nvars,lx1,ux1+1,lx2,ux2+1,ngc,lgrid%q_cor,offset,.false.)
-
+ 
      !---------------------------------------------------------------------------------------!
      ! apply boundary conditions
      
@@ -992,6 +1009,23 @@ contains
 
      !---------------------------------------------------------------------------------------!
 
+     ! compute cell-centered point values
+
+     do j=lbound(lgrid%q_cc,3),ubound(lgrid%q_cc,3)
+      do i=lbound(lgrid%q_cc,2),ubound(lgrid%q_cc,2)
+
+       do iv=1,nvars
+        lgrid%q_cc(iv,i,j) = ( rp36*lgrid%qbar_cc(iv,i,j) - &
+        rp4*(lgrid%q_x1(iv,i,j)+lgrid%q_x1(iv,i+1,j)+lgrid%q_x2(iv,i,j)+lgrid%q_x2(iv,i,j+1)) - &
+        (lgrid%q_cor(iv,i,j)+lgrid%q_cor(iv,i+1,j)+lgrid%q_cor(iv,i,j+1)+lgrid%q_cor(iv,i+1,j+1)) &
+        ) / rp16
+       end do
+
+      end do
+     end do
+ 
+     !---------------------------------------------------------------------------------------!
+
      ! cell-centered residuals
 
      ! x1-fluxes
@@ -1101,6 +1135,70 @@ contains
          (lgrid%flux_x1(iv,i+1,j)-lgrid%flux_x1(iv,i,j))*lgrid%inv_dx1 + &
          (lgrid%flux_x2(iv,i,j+1)-lgrid%flux_x2(iv,i,j))*lgrid%inv_dx2
        end do
+
+#ifdef USE_GRAVITY      
+      !Point values of density and momentum at cell center 
+      rho_cc = (1.0_rp/16.0_rp)*(36.0_rp*lgrid%qbar_cc(i_rho,i,j) - 4.0_rp*(lgrid%q_x1(i_rho,i,j)+ lgrid%q_x1(i_rho,i+1,j)+ lgrid%q_x2(i_rho,i,j)+ lgrid%q_x2(i_rho,i,j+1)) - (lgrid%q_cor(i_rho,i,j)+ lgrid%q_cor(i_rho,i+1,j)+ lgrid%q_cor(i_rho,i,j+1)+ lgrid%q_cor(i_rho,i+1,j+1)) )
+
+      rhovx1_cc = (1.0_rp/16.0_rp)*(36.0_rp*lgrid%qbar_cc(i_rhovx1,i,j) - 4.0_rp*(lgrid%q_x1(i_rhovx1,i,j)+ lgrid%q_x1(i_rhovx1,i+1,j)+ lgrid%q_x2(i_rhovx1,i,j)+ lgrid%q_x2(i_rhovx1,i,j+1)) - (lgrid%q_cor(i_rhovx1,i,j)+ lgrid%q_cor(i_rhovx1,i+1,j)+ lgrid%q_cor(i_rhovx1,i,j+1)+ lgrid%q_cor(i_rhovx1,i+1,j+1)) )
+      
+      rhovx2_cc = (1.0_rp/16.0_rp)*(36.0_rp*lgrid%qbar_cc(i_rhovx2,i,j) - 4.0_rp*(lgrid%q_x1(i_rhovx2,i,j)+ lgrid%q_x1(i_rhovx2,i+1,j)+ lgrid%q_x2(i_rhovx2,i,j)+ lgrid%q_x2(i_rhovx2,i,j+1)) - (lgrid%q_cor(i_rhovx2,i,j)+ lgrid%q_cor(i_rhovx2,i+1,j)+ lgrid%q_cor(i_rhovx2,i,j+1)+ lgrid%q_cor(i_rhovx2,i+1,j+1)) )
+
+       !SECOND-ORDER DISCRETIZATION OF GRAVITY SOURCE
+      !  lgrid%res_cc(i_rhovx1,i,j) = lgrid%res_cc(i_rhovx1,i,j) - &
+      !                               lgrid%qbar_cc(i_rho,i,j) * lgrid%grav_cc(1,i,j) 
+      !  lgrid%res_cc(i_rhovx2,i,j) = lgrid%res_cc(i_rhovx2,i,j) - &
+      !                               lgrid%qbar_cc(i_rho,i,j) * lgrid%grav_cc(2,i,j)
+      !  lgrid%res_cc(i_rhoe,i,j)   = lgrid%res_cc(i_rhoe,i,j) - &
+      !                               lgrid%qbar_cc(i_rhovx1,i,j) * lgrid%grav_cc(1,i,j) - &
+      !                               lgrid%qbar_cc(i_rhovx2,i,j) * lgrid%grav_cc(2,i,j)
+
+      ! THIRD-ORDER DISCRETIZATION OF GRAVITY SOURCE
+       lgrid%res_cc(i_rhovx1,i,j) = lgrid%res_cc(i_rhovx1,i,j) - &
+                                     (4.0_rp/36.0_rp)*(lgrid%q_x1(i_rho,i,j) * lgrid%grav_x1(1,i,j)) - &
+                                     (4.0_rp/36.0_rp)*(lgrid%q_x1(i_rho,i+1,j) * lgrid%grav_x1(1,i+1,j)) - &
+                                     (4.0_rp/36.0_rp)*(lgrid%q_x2(i_rho,i,j) * lgrid%grav_x2(1,i,j)) - &
+                                     (4.0_rp/36.0_rp)*(lgrid%q_x2(i_rho,i,j+1) * lgrid%grav_x2(1,i,j+1)) - &
+                                     (1.0_rp/36.0_rp)*(lgrid%q_cor(i_rho,i,j) * lgrid%grav_cor(1,i,j)) - &
+                                     (1.0_rp/36.0_rp)*(lgrid%q_cor(i_rho,i+1,j) * lgrid%grav_cor(1,i+1,j)) - &
+                                     (1.0_rp/36.0_rp)*(lgrid%q_cor(i_rho,i,j+1) * lgrid%grav_cor(1,i,j+1)) - &
+                                     (1.0_rp/36.0_rp)*(lgrid%q_cor(i_rho,i+1,j+1) * lgrid%grav_cor(1,i+1,j+1)) - &
+                                     (16.0_rp/36.0_rp)*(rho_cc * lgrid%grav_cc(1,i,j))
+
+       lgrid%res_cc(i_rhovx2,i,j) = lgrid%res_cc(i_rhovx2,i,j) - &
+                                     (4.0_rp/36.0_rp)*(lgrid%q_x1(i_rho,i,j) * lgrid%grav_x1(2,i,j)) - &
+                                     (4.0_rp/36.0_rp)*(lgrid%q_x1(i_rho,i+1,j) * lgrid%grav_x1(2,i+1,j)) - &
+                                     (4.0_rp/36.0_rp)*(lgrid%q_x2(i_rho,i,j) * lgrid%grav_x2(2,i,j)) - &
+                                     (4.0_rp/36.0_rp)*(lgrid%q_x2(i_rho,i,j+1) * lgrid%grav_x2(2,i,j+1)) - &
+                                     (1.0_rp/36.0_rp)*(lgrid%q_cor(i_rho,i,j) * lgrid%grav_cor(2,i,j)) - &
+                                     (1.0_rp/36.0_rp)*(lgrid%q_cor(i_rho,i+1,j) * lgrid%grav_cor(2,i+1,j)) - &
+                                     (1.0_rp/36.0_rp)*(lgrid%q_cor(i_rho,i,j+1) * lgrid%grav_cor(2,i,j+1)) - &
+                                     (1.0_rp/36.0_rp)*(lgrid%q_cor(i_rho,i+1,j+1) * lgrid%grav_cor(2,i+1,j+1)) - &
+                                     (16.0_rp/36.0_rp)*(rho_cc * lgrid%grav_cc(2,i,j))           
+
+       lgrid%res_cc(i_rhoe,i,j)   = lgrid%res_cc(i_rhoe,i,j) - &
+                                     (4.0_rp/36.0_rp)*(lgrid%q_x1(i_rhovx1,i,j) * lgrid%grav_x1(1,i,j)) - &
+                                     (4.0_rp/36.0_rp)*(lgrid%q_x1(i_rhovx1,i+1,j) * lgrid%grav_x1(1,i+1,j)) - &
+                                     (4.0_rp/36.0_rp)*(lgrid%q_x2(i_rhovx1,i,j) * lgrid%grav_x2(1,i,j)) - &
+                                     (4.0_rp/36.0_rp)*(lgrid%q_x2(i_rhovx1,i,j+1) * lgrid%grav_x2(1,i,j+1)) - &
+                                     (1.0_rp/36.0_rp)*(lgrid%q_cor(i_rhovx1,i,j) * lgrid%grav_cor(1,i,j)) - &
+                                     (1.0_rp/36.0_rp)*(lgrid%q_cor(i_rhovx1,i+1,j) * lgrid%grav_cor(1,i+1,j)) - &
+                                     (1.0_rp/36.0_rp)*(lgrid%q_cor(i_rhovx1,i,j+1) * lgrid%grav_cor(1,i,j+1)) - &
+                                     (1.0_rp/36.0_rp)*(lgrid%q_cor(i_rhovx1,i+1,j+1) * lgrid%grav_cor(1,i+1,j+1)) - &
+                                     (16.0_rp/36.0_rp)*(rhovx1_cc * lgrid%grav_cc(1,i,j)) - &
+                                     (4.0_rp/36.0_rp)*(lgrid%q_x1(i_rhovx2,i,j) * lgrid%grav_x1(2,i,j)) - &
+                                     (4.0_rp/36.0_rp)*(lgrid%q_x1(i_rhovx2,i+1,j) * lgrid%grav_x1(2,i+1,j)) - &
+                                     (4.0_rp/36.0_rp)*(lgrid%q_x2(i_rhovx2,i,j) * lgrid%grav_x2(2,i,j)) - &
+                                     (4.0_rp/36.0_rp)*(lgrid%q_x2(i_rhovx2,i,j+1) * lgrid%grav_x2(2,i,j+1)) - &
+                                     (1.0_rp/36.0_rp)*(lgrid%q_cor(i_rhovx2,i,j) * lgrid%grav_cor(2,i,j)) - &
+                                     (1.0_rp/36.0_rp)*(lgrid%q_cor(i_rhovx2,i+1,j) * lgrid%grav_cor(2,i+1,j)) - &
+                                     (1.0_rp/36.0_rp)*(lgrid%q_cor(i_rhovx2,i,j+1) * lgrid%grav_cor(2,i,j+1)) - &
+                                     (1.0_rp/36.0_rp)*(lgrid%q_cor(i_rhovx2,i+1,j+1) * lgrid%grav_cor(2,i+1,j+1)) - &
+                                     (16.0_rp/36.0_rp)*(rhovx2_cc * lgrid%grav_cc(2,i,j))   
+
+#endif
+
+                                                                                             
       end do
      end do
 
@@ -1278,11 +1376,9 @@ contains
        ! Dpq
 
        do iv=1,nvars
-        Dpq(iv) = oquart*lgrid%inv_dx1*( &
-        rp4*(-rp9*lgrid%qbar_cc(iv,i-1,j)+rp2*(lgrid%q_x1(iv,i-1,j)+rp2*lgrid%q_x1(iv,i,j))) + &
-        rp4*(lgrid%q_x2(iv,i-1,j)+lgrid%q_x2(iv,i-1,j+1)) + &
-        lgrid%q_cor(iv,i-1,j)+lgrid%q_cor(iv,i,j)+lgrid%q_cor(iv,i,j+1)+lgrid%q_cor(iv,i-1,j+1) &
-        )
+
+        Dpq(iv) = lgrid%inv_dx1*(rp3*lgrid%q_x1(iv,i,j)-rp4*lgrid%q_cc(iv,i-1,j)+lgrid%q_x1(iv,i-1,j))
+
        end do
 
        !-----------------------------------------------!
@@ -1349,13 +1445,9 @@ contains
        ! Dmq
 
        do iv=1,nvars
-        Dmq(iv) = -oquart*lgrid%inv_dx1*( &
-        -rp36*lgrid%qbar_cc(iv,i,j) + &
-        rp8*(rp2*lgrid%q_x1(iv,i,j)+lgrid%q_x1(iv,i+1,j)) + &
-        lgrid%q_cor(iv,i,j) + &
-        rp4*(lgrid%q_x2(iv,i,j)+lgrid%q_x2(iv,i,j+1)) + &
-        lgrid%q_cor(iv,i+1,j) + lgrid%q_cor(iv,i,j+1) + lgrid%q_cor(iv,i+1,j+1) &
-        )
+
+        Dmq(iv) = lgrid%inv_dx1*(-rp3*lgrid%q_x1(iv,i,j)+rp4*lgrid%q_cc(iv,i,j)-lgrid%q_x1(iv,i+1,j))
+
        end do
 
        !-----------------------------------------------!
@@ -1371,7 +1463,15 @@ contains
        end do
 
        !-----------------------------------------------!
-
+#ifdef USE_GRAVITY       
+       lgrid%res_x1(i_rhovx1,i,j) = lgrid%res_x1(i_rhovx1,i,j) - &
+                                     lgrid%q_x1(i_rho,i,j) * lgrid%grav_x1(1,i,j)
+       lgrid%res_x1(i_rhovx2,i,j) = lgrid%res_x1(i_rhovx2,i,j) - &
+                                     lgrid%q_x1(i_rho,i,j) * lgrid%grav_x1(2,i,j)
+       lgrid%res_x1(i_rhoe,i,j)   = lgrid%res_x1(i_rhoe,i,j) - &
+                                     lgrid%q_x1(i_rhovx1,i,j) * lgrid%grav_x1(1,i,j) - &
+                                     lgrid%q_x1(i_rhovx2,i,j) * lgrid%grav_x1(2,i,j)
+#endif                                      
       end do
      end do
 
@@ -1549,11 +1649,9 @@ contains
        ! Dpq
 
        do iv=1,nvars
-        Dpq(iv) = oquart*lgrid%inv_dx2*( &
-        rp4*(lgrid%q_x1(iv,i,j-1)-rp9*lgrid%qbar_cc(iv,i,j-1)+lgrid%q_x1(iv,i+1,j-1)) + &
-        lgrid%q_cor(iv,i,j)+lgrid%q_cor(iv,i+1,j)+lgrid%q_cor(iv,i,j-1)+lgrid%q_cor(iv,i+1,j-1) + &
-        rp8*(lgrid%q_x2(iv,i,j-1)+rp2*lgrid%q_x2(iv,i,j)) &
-        )
+
+        Dpq(iv) = lgrid%inv_dx2*(rp3*lgrid%q_x2(iv,i,j)-rp4*lgrid%q_cc(iv,i,j-1)+lgrid%q_x2(iv,i,j-1))
+
        end do
 
        !-----------------------------------------------!
@@ -1620,11 +1718,9 @@ contains
        ! Dmq
 
        do iv=1,nvars
-        Dmq(iv) = -oquart*lgrid%inv_dx2*( &
-        rp4*(lgrid%q_x1(iv,i,j)-rp9*lgrid%qbar_cc(iv,i,j)+lgrid%q_x1(iv,i+1,j)) + &
-        lgrid%q_cor(iv,i,j)+lgrid%q_cor(iv,i+1,j)+lgrid%q_cor(iv,i,j+1)+lgrid%q_cor(iv,i+1,j+1) + &
-        rp8*(rp2*lgrid%q_x2(iv,i,j)+lgrid%q_x2(iv,i,j+1)) &
-        )
+
+        Dmq(iv) = lgrid%inv_dx2*(-rp3*lgrid%q_x2(iv,i,j)+rp4*lgrid%q_cc(iv,i,j)-lgrid%q_x2(iv,i,j+1))
+
        end do
 
        !-----------------------------------------------!
@@ -1639,7 +1735,17 @@ contains
         lgrid%res_x2(iv,i,j) = lgrid%res_x2(iv,i,j) + tmp
        end do
 
+#ifdef USE_GRAVITY
        !-----------------------------------------------!
+       lgrid%res_x2(i_rhovx1,i,j) = lgrid%res_x2(i_rhovx1,i,j) - &
+                                     lgrid%q_x2(i_rho,i,j) * lgrid%grav_x2(1,i,j)
+       lgrid%res_x2(i_rhovx2,i,j) = lgrid%res_x2(i_rhovx2,i,j) - &
+                                     lgrid%q_x2(i_rho,i,j) * lgrid%grav_x2(2,i,j)
+       lgrid%res_x2(i_rhoe,i,j)   = lgrid%res_x2(i_rhoe,i,j) - &
+                                     lgrid%q_x2(i_rhovx1,i,j) * lgrid%grav_x2(1,i,j) - &
+                                     lgrid%q_x2(i_rhovx2,i,j) * lgrid%grav_x2(2,i,j)   
+
+#endif                                                                 
 
       end do
      end do
@@ -2043,7 +2149,7 @@ contains
 
        do iv=1,nvars
         Dmq(iv) = lgrid%inv_dx2*( &
-        rp4*lgrid%q_x1(iv,i,j)-rp3*lgrid%q_cor(iv,i,j)-lgrid%q_cor(iv,i,j+1) &                
+        rp4*lgrid%q_x1(iv,i,j)-rp3*lgrid%q_cor(iv,i,j)-lgrid%q_cor(iv,i,j+1) &              
         )
        end do
 
@@ -2059,8 +2165,17 @@ contains
         lgrid%res_cor(iv,i,j) = lgrid%res_cor(iv,i,j) + tmp
        end do
 
+#ifdef USE_GRAVITY
        !-----------------------------------------------!
 
+       lgrid%res_cor(i_rhovx1,i,j) = lgrid%res_cor(i_rhovx1,i,j) - &
+                                      lgrid%q_cor(i_rho,i,j) * lgrid%grav_cor(1,i,j)
+       lgrid%res_cor(i_rhovx2,i,j) = lgrid%res_cor(i_rhovx2,i,j) - &
+                                      lgrid%q_cor(i_rho,i,j) * lgrid%grav_cor(2,i,j)
+       lgrid%res_cor(i_rhoe,i,j)   = lgrid%res_cor(i_rhoe,i,j) - &
+                                      lgrid%q_cor(i_rhovx1,i,j) * lgrid%grav_cor(1,i,j) - &
+                                      lgrid%q_cor(i_rhovx2,i,j) * lgrid%grav_cor(2,i,j)      
+#endif                                                               
       end do
      end do
  
