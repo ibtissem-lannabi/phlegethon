@@ -119,6 +119,37 @@ program test
   end do
  end do
 
+ do j=lbound(lgrid%q_cc,3),ubound(lgrid%q_cc,3)
+  do i=lbound(lgrid%q_cc,2),ubound(lgrid%q_cc,2)
+
+     x = lgrid%coords_cc(1,i,j)
+     y = lgrid%coords_cc(2,i,j)
+
+     r   = sqrt((x-x0)**2+(y-y0)**2)
+     phi = atan2(y-y0,x-x0)
+     if(r < 0.2_rp) then
+      uphi = 5.0_rp*r
+      p    = p0 + 12.5_rp*r**2
+     else if (r < 0.4_rp) then
+      uphi = 2.0_rp - 5.0_rp*r
+      p    = p0 + 12.5_rp*r**2 + 4.0_rp * (1.0_rp-5.0_rp*r-log(0.2_rp)+log(r))
+     else
+      uphi = 0.0_rp
+      p    = p0 - 2.0_rp + 4.0_rp*log(2.0_rp)
+     end if
+
+     vx1 = -sin(phi)*uphi
+     vx2 = cos(phi)*uphi
+
+     lgrid%q_cc(i_rhovx1,i,j) = vx1
+     lgrid%q_cc(i_rhovx2,i,j) = vx2
+
+     lgrid%q_cc(i_rho,i,j) = 1.0_rp
+     lgrid%q_cc(i_rhoe,i,j) = p/(lgrid%gm-1.0_rp)+rph*(vx1**2+vx2**2)
+
+  end do
+ end do
+
  call time_loop(mgrid,lgrid)
 
  call finalize_simulation(lgrid)
