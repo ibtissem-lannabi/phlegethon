@@ -647,272 +647,348 @@ contains
 
      !---------------------------------------------------------------------------------------!
      ! apply boundary conditions
+     
+     
+     !! define normals in x1
+     n1_x1 = 1.0d0
+     n2_x1 = 0.0d0
 
-     if (.not. mgrid%periodic(1)) then
-        !! define normals
-        n1_x1 = 1.0d0
-        n2_x1 = 0.0d0
+     !! define normals in x2
+     n1_x2 = 0.0d0
+     n2_x2 = 1.0d0
 
-
-        !! write(*,*) "HELLO wall"
-        !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-        ! Reflective Boundary conditions
-        !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+     !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+     ! Reflective Boundary conditions
+     !>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #ifdef X1L_REFLECTIVE
 
-        if (mgrid%coords_dd(1) == 0) then
-           !!lower cc
-           do j=lx2,ux2
-              do i=lx1-ngc,lx1-1
-                 ik = 1 - i  !lx1 - 1 ! 2*lx1 - i - 1  !
+     if (mgrid%coords_dd(1) == 0) then
+        !!lower cc
+        do j=lx2,ux2
+           do i=lx1-ngc,lx1-1
+              ik = 1 - i
 
-                 do iv = 1, nvars
-                    lgrid%qbar_cc(iv,i,j) = lgrid%qbar_cc(iv,ik,j)
-                 end do
-
-                 ! normal component of vec
-                 v1_cc = lgrid%qbar_cc(i_vx1, ik, j)
-                 v2_cc = lgrid%qbar_cc(i_vx2, ik, j)
-                 vn_cc = v1_cc*n1_x1 + v2_cc*n2_x1
-
-                 lgrid%qbar_cc(i_vx1,i,j) = v1_cc - 2.0 * vn_cc * n1_x1
-                 lgrid%qbar_cc(i_vx2,i,j) = v2_cc - 2.0 * vn_cc * n2_x1
+              do iv = 1, nvars
+                 lgrid%qbar_cc(iv,i,j) = lgrid%qbar_cc(iv,ik,j)
               end do
+
+              ! normal component of vec
+              v1_cc = lgrid%qbar_cc(i_vx1, ik, j)
+              v2_cc = lgrid%qbar_cc(i_vx2, ik, j)
+              vn_cc = v1_cc*n1_x1 + v2_cc*n2_x1
+
+              lgrid%qbar_cc(i_vx1,i,j) = v1_cc - 2.0 * vn_cc * n1_x1
+              lgrid%qbar_cc(i_vx2,i,j) = v2_cc - 2.0 * vn_cc * n2_x1
            end do
-           !!lower corners
-           do j=lx2,ux2+1
-              do i=lx1-ngc,lx1-1
-                 ik = 2 - i
+        end do
+        !!lower corners
+        do j=lx2,ux2+1
+           do i=lx1-ngc,lx1-1
+              ik = 2 - i
 
-                 do iv = 1, nvars
-                    lgrid%q_cor(iv,i,j) = lgrid%q_cor(iv,ik,j)
-                 end do
-
-                 ! normal component of vec
-                 v1_cor = lgrid%q_cor(i_vx1, ik, j)
-                 v2_cor = lgrid%q_cor(i_vx2, ik, j)
-                 vn_cor = v1_cor*n1_x1 + v2_cor*n2_x1
-
-                 lgrid%q_cor(i_vx1,i,j) = v1_cor - 2.0 * vn_cor * n1_x1
-                 lgrid%q_cor(i_vx2,i,j) = v2_cor - 2.0 * vn_cor * n2_x1
+              do iv = 1, nvars
+                 lgrid%q_cor(iv,i,j) = lgrid%q_cor(iv,ik,j)
               end do
+
+              ! normal component of vec
+              v1_cor = lgrid%q_cor(i_vx1, ik, j)
+              v2_cor = lgrid%q_cor(i_vx2, ik, j)
+              vn_cor = v1_cor*n1_x1 + v2_cor*n2_x1
+
+              lgrid%q_cor(i_vx1,i,j) = v1_cor - 2.0 * vn_cor * n1_x1
+              lgrid%q_cor(i_vx2,i,j) = v2_cor - 2.0 * vn_cor * n2_x1
            end do
+        end do
 
-           !!lower faces
-           do j=lx2,ux2+1
-              do i=lx1-ngc,lx1-1
-                 ik = 1 - i
+        !!lower faces x1
+        do j=lx2,ux2
+           do i=lx1-ngc,lx1-1
+              ik = 2 - i
 
-                 do iv = 1, nvars
-                    lgrid%q_x1(iv,i,j) = lgrid%q_x1(iv,ik,j)
-                 end do
-
-                 ! normal component of vec
-                 v1_x1 = lgrid%q_x1(i_vx1, ik, j)
-                 v2_x1 = lgrid%q_x1(i_vx2, ik, j)
-                 vn_x1 = v1_x1*n1_x1 + v2_x1*n2_x1
-
-                 lgrid%q_x1(i_vx1,i,j) = v1_x1 - 2.0 * vn_x1 * n1_x1
-                 lgrid%q_x1(i_vx2,i,j) = v2_x1 - 2.0 * vn_x1 * n2_x1
+              do iv = 1, nvars
+                 lgrid%q_x1(iv,i,j) = lgrid%q_x1(iv,ik,j)
               end do
+
+              ! normal component of vec
+              v1_x1 = lgrid%q_x1(i_vx1, ik, j)
+              v2_x1 = lgrid%q_x1(i_vx2, ik, j)
+              vn_x1 = v1_x1*n1_x1 + v2_x1*n2_x1
+
+              lgrid%q_x1(i_vx1,i,j) = v1_x1 - 2.0 * vn_x1 * n1_x1
+              lgrid%q_x1(i_vx2,i,j) = v2_x1 - 2.0 * vn_x1 * n2_x1
            end do
-        end if
+        end do
+
+        !!lower faces x2
+        do j=lx2,ux2+1
+           do i=lx1-ngc,lx1-1
+              ik = 1 - i
+
+              do iv = 1, nvars
+                 lgrid%q_x1(iv,i,j) = lgrid%q_x1(iv,ik,j)
+              end do
+
+              ! normal component of vec
+              v1_x2 = lgrid%q_x2(i_vx1, ik, j)
+              v2_x2 = lgrid%q_x2(i_vx2, ik, j)
+              vn_x2 = v1_x2*n1_x1 + v2_x2*n2_x1
+
+              lgrid%q_x2(i_vx1,i,j) = v1_x2 - 2.0 * vn_x2 * n1_x1
+              lgrid%q_x2(i_vx2,i,j) = v2_x2 - 2.0 * vn_x2 * n2_x1
+           end do
+        end do
+
+        
+     end if
 
 #endif
 #ifdef X1U_REFLECTIVE
 
-        if (mgrid%coords_dd(1) == mgrid%bricks(1)-1) then
-           !!upper cc
-           do j=lx2,ux2
-              do i=ux1+1,ux1+ngc
-                 ik= ux1 - (i-ux1-1)
+     if (mgrid%coords_dd(1) == mgrid%bricks(1)-1) then
+        !!upper cc
+        do j=lx2,ux2
+           do i=ux1+1,ux1+ngc
+              ik= ux1 - (i-ux1-1)
 
-                 do iv = 1, nvars
-                    lgrid%qbar_cc(iv,i,j) = lgrid%qbar_cc(iv,ik,j)
-                 end do
-
-                 ! normal component of vec
-                 v1_cc = lgrid%qbar_cc(i_vx1, ik, j)
-                 v2_cc = lgrid%qbar_cc(i_vx2, ik, j)
-                 vn_cc = v1_cc * n1_x1 + v2_cc * n2_x1
-                 lgrid%qbar_cc(i_vx1,i,j) = v1_cc - 2.0 * vn_cc * n1_x1
-                 lgrid%qbar_cc(i_vx2,i,j) = v2_cc - 2.0 * vn_cc * n2_x1
-
+              do iv = 1, nvars
+                 lgrid%qbar_cc(iv,i,j) = lgrid%qbar_cc(iv,ik,j)
               end do
+
+              ! normal component of vec
+              v1_cc = lgrid%qbar_cc(i_vx1, ik, j)
+              v2_cc = lgrid%qbar_cc(i_vx2, ik, j)
+              vn_cc = v1_cc * n1_x1 + v2_cc * n2_x1
+              lgrid%qbar_cc(i_vx1,i,j) = v1_cc - 2.0 * vn_cc * n1_x1
+              lgrid%qbar_cc(i_vx2,i,j) = v2_cc - 2.0 * vn_cc * n2_x1
+
            end do
+        end do
 
-           !!upper corners
-           do j=lx2,ux2+1
-              do i=ux1+2,ux1+1+ngc
-                 ik= ux1 - (i-ux1-2)
+        !!upper corners
+        do j=lx2,ux2+1
+           do i=ux1+2,ux1+1+ngc
+              ik= ux1 - (i-ux1-2)
 
-                 do iv = 1, nvars
-                    lgrid%q_cor(iv,i,j) = lgrid%q_cor(iv,ik,j)
-                 end do
-
-                 ! normal component of vec
-                 v1_cor = lgrid%q_cor(i_vx1, ik, j)
-                 v2_cor =lgrid%q_cor(i_vx2, ik, j)
-                 vn_cor = v1_cor * n1_x1 + v2_cor * n2_x1
-                 lgrid%q_cor(i_vx1,i,j) = v1_cor - 2.0 * vn_cor * n1_x1
-                 lgrid%q_cor(i_vx2,i,j) = v2_cor - 2.0 * vn_cor * n2_x1
+              do iv = 1, nvars
+                 lgrid%q_cor(iv,i,j) = lgrid%q_cor(iv,ik,j)
               end do
+
+              ! normal component of vec
+              v1_cor = lgrid%q_cor(i_vx1, ik, j)
+              v2_cor =lgrid%q_cor(i_vx2, ik, j)
+              vn_cor = v1_cor * n1_x1 + v2_cor * n2_x1
+              lgrid%q_cor(i_vx1,i,j) = v1_cor - 2.0 * vn_cor * n1_x1
+              lgrid%q_cor(i_vx2,i,j) = v2_cor - 2.0 * vn_cor * n2_x1
            end do
+        end do
 
-           !!upper faces
-           do j=lx2,ux2+1
-              do i=ux1+1,ux1+ngc
-                 ik= ux1 - (i-ux1-1)
+        !!upper faces x1
+        do j=lx2,ux2
+           do i=ux1+2,ux1+1+ngc
+              ik= ux1 - (i-ux1-2)
 
-                 do iv = 1, nvars
-                    lgrid%q_x1(iv,i,j) = lgrid%q_x1(iv,ik,j)
-                 end do
-
-                 ! normal component of vec
-                 v1_x1 = lgrid%q_x1(i_vx1, ik, j)
-                 v2_x1 = lgrid%q_x1(i_vx2, ik, j)
-                 vn_x1 = v1_x1 * n1_x1 + v2_x1 * n2_x1
-                 lgrid%q_x1(i_vx1,i,j) = v1_x1 - 2.0 * vn_x1 * n1_x1
-                 lgrid%q_x1(i_vx2,i,j) = v2_x1 - 2.0 * vn_x1 * n2_x1
+              do iv = 1, nvars
+                 lgrid%q_x1(iv,i,j) = lgrid%q_x1(iv,ik,j)
               end do
+
+              ! normal component of vec
+              v1_x1 = lgrid%q_x1(i_vx1, ik, j)
+              v2_x1 = lgrid%q_x1(i_vx2, ik, j)
+              vn_x1 = v1_x1 * n1_x1 + v2_x1 * n2_x1
+              lgrid%q_x1(i_vx1,i,j) = v1_x1 - 2.0 * vn_x1 * n1_x1
+              lgrid%q_x1(i_vx2,i,j) = v2_x1 - 2.0 * vn_x1 * n2_x1
            end do
-        end if
-#endif
+        end do
+
+        !!upper faces x2
+        do j=lx2,ux2+1
+           do i=ux1+1,ux1+ngc
+              ik= ux1 - (i-ux1-1)
+
+              do iv = 1, nvars
+                 lgrid%q_x2(iv,i,j) = lgrid%q_x2(iv,ik,j)
+              end do
+
+              ! normal component of vec
+              v1_x2 = lgrid%q_x2(i_vx1, ik, j)
+              v2_x2 = lgrid%q_x2(i_vx2, ik, j)
+              vn_x2 = v1_x2 * n1_x1 + v2_x2 * n2_x1
+              lgrid%q_x2(i_vx1,i,j) = v1_x2 - 2.0 * vn_x2 * n1_x1
+              lgrid%q_x2(i_vx2,i,j) = v2_x2 - 2.0 * vn_x2 * n2_x1
+           end do
+        end do
      end if
-     if (.not. mgrid%periodic(2)) then
-        !! define normals
-        n1_x2 = 0.0d0
-        n2_x2 = 1.0d0
+#endif
 #ifdef X2L_REFLECTIVE
 
-        if (mgrid%coords_dd(2) == 0) then
-           !!lower cc
-           do j=lx2-ngc,lx2-1
-              do i=lx1,ux1
-                 ik =  1-j
+     if (mgrid%coords_dd(2) == 0) then
+        !!lower cc
+        do j=lx2-ngc,lx2-1
+           do i=lx1,ux1
+              ik =  1-j
 
-                 do iv = 1, nvars
-                    lgrid%qbar_cc(iv,i,j) = lgrid%qbar_cc(iv,i,ik)
-                 end do
-
-
-                 v1_cc = lgrid%qbar_cc(i_vx1, i, ik)
-                 v2_cc = lgrid%qbar_cc(i_vx2, i, ik)
-
-                 vn_cc = v1_cc * n1_x2 + v2_cc * n2_x2
-
-
-                 lgrid%qbar_cc(i_vx1,i,j) = v1_cc - 2.0d0 * vn_cc * n1_x2
-                 lgrid%qbar_cc(i_vx2,i,j) = v2_cc - 2.0d0 * vn_cc * n2_x2
+              do iv = 1, nvars
+                 lgrid%qbar_cc(iv,i,j) = lgrid%qbar_cc(iv,i,ik)
               end do
+
+
+              v1_cc = lgrid%qbar_cc(i_vx1, i, ik)
+              v2_cc = lgrid%qbar_cc(i_vx2, i, ik)
+
+              vn_cc = v1_cc * n1_x2 + v2_cc * n2_x2
+
+
+              lgrid%qbar_cc(i_vx1,i,j) = v1_cc - 2.0d0 * vn_cc * n1_x2
+              lgrid%qbar_cc(i_vx2,i,j) = v2_cc - 2.0d0 * vn_cc * n2_x2
            end do
+        end do
 
-           !!lower corners
-           do j=lx2-ngc,lx2-1
-              do i=lx1,ux1+1
-                 ik =  2-j
+        !!lower corners
+        do j=lx2-ngc,lx2-1
+           do i=lx1,ux1+1
+              ik =  2-j
 
-                 do iv = 1, nvars
-                    lgrid%q_cor(iv,i,j) = lgrid%q_cor(iv,i,ik)
-                 end do
-
-
-                 v1_cor = lgrid%q_cor(i_vx1, i, ik)
-                 v2_cor = lgrid%q_cor(i_vx2, i, ik)
-
-                 vn_cor = v1_cor * n1_x2 + v2_cor * n2_x2
-
-
-                 lgrid%q_cor(i_vx1,i,j) = v1_cor - 2.0d0 * vn_cor * n1_x2
-                 lgrid%q_cor(i_vx2,i,j) = v2_cor - 2.0d0 * vn_cor * n2_x2
+              do iv = 1, nvars
+                 lgrid%q_cor(iv,i,j) = lgrid%q_cor(iv,i,ik)
               end do
+
+
+              v1_cor = lgrid%q_cor(i_vx1, i, ik)
+              v2_cor = lgrid%q_cor(i_vx2, i, ik)
+
+              vn_cor = v1_cor * n1_x2 + v2_cor * n2_x2
+
+
+              lgrid%q_cor(i_vx1,i,j) = v1_cor - 2.0d0 * vn_cor * n1_x2
+              lgrid%q_cor(i_vx2,i,j) = v2_cor - 2.0d0 * vn_cor * n2_x2
            end do
+        end do
 
-           !!lower faces
-           do j=lx2-ngc,lx2-1
-              do i=lx1,ux1
-                 ik =  1-j
+        !!lower faces x1
+        do j=lx2-ngc,lx2-1
+           do i=lx1,ux1+1
+              ik =  1-j
 
-                 do iv = 1, nvars
-                    lgrid%q_x2(iv,i,j) = lgrid%q_x2(iv,i,ik)
-                 end do
-
-
-                 v1_x2 = lgrid%q_x2(i_vx1, i, ik)
-                 v2_x2 = lgrid%q_x2(i_vx2, i, ik)
-
-                 vn_x2 = v1_x2 * n1_x2 + v2_x2 * n2_x2
-
-
-                 lgrid%q_x2(i_vx1,i,j) = v1_x2 - 2.0d0 * vn_x2 * n1_x2
-                 lgrid%q_x2(i_vx2,i,j) = v2_x2 - 2.0d0 * vn_x2 * n2_x2
+              do iv = 1, nvars
+                 lgrid%q_x1(iv,i,j) = lgrid%q_x1(iv,i,ik)
               end do
+              v1_x1 = lgrid%q_x1(i_vx1, i, ik)
+              v2_x1 = lgrid%q_x1(i_vx2, i, ik)
+
+              vn_x1 = v1_x1 * n1_x2 + v2_x1 * n2_x2
+
+
+              lgrid%q_x1(i_vx1,i,j) = v1_x1 - 2.0d0 * vn_x1 * n1_x2
+              lgrid%q_x1(i_vx2,i,j) = v2_x1 - 2.0d0 * vn_x1 * n2_x2
            end do
-        end if
+        end do
+
+        !!lower faces x2
+        do j=lx2-ngc,lx2-1
+           do i=lx1,ux1
+              ik =  2-j
+
+              do iv = 1, nvars
+                 lgrid%q_x2(iv,i,j) = lgrid%q_x2(iv,i,ik)
+              end do
+
+
+              v1_x2 = lgrid%q_x2(i_vx1, i, ik)
+              v2_x2 = lgrid%q_x2(i_vx2, i, ik)
+
+              vn_x2 = v1_x2 * n1_x2 + v2_x2 * n2_x2
+
+
+              lgrid%q_x2(i_vx1,i,j) = v1_x2 - 2.0d0 * vn_x2 * n1_x2
+              lgrid%q_x2(i_vx2,i,j) = v2_x2 - 2.0d0 * vn_x2 * n2_x2
+           end do
+        end do
+
+     end if
 
 #endif
 #ifdef X2U_REFLECTIVE
 
-        if (mgrid%coords_dd(2) == mgrid%bricks(2)-1) then
-           !!upper cc
-           do j=ux2+2,ux2+1+ngc
-              do i=lx1,ux1
+     if (mgrid%coords_dd(2) == mgrid%bricks(2)-1) then
+        !!upper cc
+        do j=ux2+1,ux2+ngc
+           do i=lx1,ux1
 
-                 ik= ux2 - (j-ux2-1)
+              ik= ux2 - (j-ux2-1)
 
-                 do iv = 1, nvars
-                    lgrid%qbar_cc(iv,i,j) = lgrid%qbar_cc(iv,i,ik)
-                 end do
-
-                 ! normal component of vec
-                 v1_cc = lgrid%qbar_cc(i_vx1, i, ik)
-                 v2_cc = lgrid%qbar_cc(i_vx2, i, ik)
-                 vn_cc = v1_cc * n1_x2 + v2_cc * n2_x2
-                 lgrid%qbar_cc(i_vx1,i,j) = v1_cc - 2.0 * vn_cc * n1_x2
-                 lgrid%qbar_cc(i_vx2,i,j) = v2_cc - 2.0 * vn_cc * n2_x2
+              do iv = 1, nvars
+                 lgrid%qbar_cc(iv,i,j) = lgrid%qbar_cc(iv,i,ik)
               end do
+
+              ! normal component of vec
+              v1_cc = lgrid%qbar_cc(i_vx1, i, ik)
+              v2_cc = lgrid%qbar_cc(i_vx2, i, ik)
+              vn_cc = v1_cc * n1_x2 + v2_cc * n2_x2
+              lgrid%qbar_cc(i_vx1,i,j) = v1_cc - 2.0 * vn_cc * n1_x2
+              lgrid%qbar_cc(i_vx2,i,j) = v2_cc - 2.0 * vn_cc * n2_x2
            end do
+        end do
 
-           !!upper corners
-           do j=ux2+1,ux2+ngc
-              do i=lx1,ux1
+        !!upper corners
+        do j=ux2+2,ux2+1+ngc
+           do i=lx1,ux1+1
 
-                 ik= ux2 - (j-ux2-2)
+              ik= ux2 - (j-ux2-2)
 
-                 do iv = 1, nvars
-                    lgrid%q_cor(iv,i,j) = lgrid%q_cor(iv,i,ik)
-                 end do
-
-                 ! normal component of vec
-                 v1_cor =  lgrid%q_cor(i_vx1, i, ik)
-                 v2_cor =  lgrid%q_cor(i_vx2, i, ik)
-                 vn_cor = v1_cor * n1_x2 + v2_cor * n2_x2
-                 lgrid%q_cor(i_vx1,i,j) = v1_cor - 2.0 * vn_cor * n1_x2
-                 lgrid%q_cor(i_vx2,i,j) = v2_cor - 2.0 * vn_cor * n2_x2
+              do iv = 1, nvars
+                 lgrid%q_cor(iv,i,j) = lgrid%q_cor(iv,i,ik)
               end do
+
+              ! normal component of vec
+              v1_cor =  lgrid%q_cor(i_vx1, i, ik)
+              v2_cor =  lgrid%q_cor(i_vx2, i, ik)
+              vn_cor = v1_cor * n1_x2 + v2_cor * n2_x2
+              lgrid%q_cor(i_vx1,i,j) = v1_cor - 2.0 * vn_cor * n1_x2
+              lgrid%q_cor(i_vx2,i,j) = v2_cor - 2.0 * vn_cor * n2_x2
            end do
+        end do
 
-           !!upper faces
-           do j=ux2+2,ux2+1+ngc
-              do i=lx1,ux1
+        !!upper faces x1
+        do j=ux2+1,ux2+ngc
+           do i=lx1,ux1+1
 
-                 ik= ux2 - (j-ux2-1)
+              ik= ux2 - (j-ux2-1)
 
-                 do iv = 1, nvars
-                    lgrid%q_x2(iv,i,j) =  lgrid%q_x2(iv,i,ik)
-                 end do
-
-                 ! normal component of vec
-                 v1_x2 =  lgrid%q_x2(i_vx1, i, ik)
-                 v2_x2 =  lgrid%q_x2(i_vx2, i, ik)
-                 vn_x2 = v1_x2 * n1_x2 + v2_x2 * n2_x2
-                 lgrid%q_x2(i_vx1,i,j) = v1_x2 - 2.0 * vn_x2 * n1_x2
-                 lgrid%q_x2(i_vx2,i,j) = v2_x2 - 2.0 * vn_x2 * n2_x2
+              do iv = 1, nvars
+                 lgrid%q_x1(iv,i,j) =  lgrid%q_x1(iv,i,ik)
               end do
+
+              ! normal component of vec
+              v1_x1 =  lgrid%q_x1(i_vx1, i, ik)
+              v2_x1 =  lgrid%q_x1(i_vx2, i, ik)
+              vn_x1 = v1_x1 * n1_x2 + v2_x1 * n2_x2
+              lgrid%q_x1(i_vx1,i,j) = v1_x1 - 2.0 * vn_x1 * n1_x2
+              lgrid%q_x1(i_vx2,i,j) = v2_x1 - 2.0 * vn_x1 * n2_x2
            end do
-        end if
-#endif
+        end do
+
+
+        !!upper faces x2
+        do j=ux2+2,ux2+1+ngc
+           do i=lx1,ux1
+
+              ik= ux2 - (j-ux2-2)
+
+              do iv = 1, nvars
+                 lgrid%q_x2(iv,i,j) =  lgrid%q_x2(iv,i,ik)
+              end do
+
+              ! normal component of vec
+              v1_x2 =  lgrid%q_x2(i_vx1, i, ik)
+              v2_x2 =  lgrid%q_x2(i_vx2, i, ik)
+              vn_x2 = v1_x2 * n1_x2 + v2_x2 * n2_x2
+              lgrid%q_x2(i_vx1,i,j) = v1_x2 - 2.0 * vn_x2 * n1_x2
+              lgrid%q_x2(i_vx2,i,j) = v2_x2 - 2.0 * vn_x2 * n2_x2
+           end do
+        end do
      end if
+#endif
+
 
      !---------------------------------------------------------------------------------------!
 
