@@ -949,15 +949,7 @@ contains
 
        do iv=1,nvars
 
-#ifdef USE_DIFF1
-        Dpq(iv) = oquart*lgrid%inv_dx1*( &
-        rp4*(-rp9*lgrid%qbar_cc(iv,i-1,j)+rp2*(lgrid%q_x1(iv,i-1,j)+rp2*lgrid%q_x1(iv,i,j))) + &
-        rp4*(lgrid%q_x2(iv,i-1,j)+lgrid%q_x2(iv,i-1,j+1)) + &
-        lgrid%q_cor(iv,i-1,j)+lgrid%q_cor(iv,i,j)+lgrid%q_cor(iv,i,j+1)+lgrid%q_cor(iv,i-1,j+1) &
-        )
-#elif defined(USE_DIFF2)
         Dpq(iv) = lgrid%inv_dx1*(rp3*lgrid%q_x1(iv,i,j)-rp4*lgrid%q_cc(iv,i-1,j)+lgrid%q_x1(iv,i-1,j))
-#endif
 
        end do
 
@@ -1026,17 +1018,7 @@ contains
 
        do iv=1,nvars
 
-#ifdef USE_DIFF1       
-        Dmq(iv) = -oquart*lgrid%inv_dx1*( &
-        -rp36*lgrid%qbar_cc(iv,i,j) + &
-        rp8*(rp2*lgrid%q_x1(iv,i,j)+lgrid%q_x1(iv,i+1,j)) + &
-        lgrid%q_cor(iv,i,j) + &
-        rp4*(lgrid%q_x2(iv,i,j)+lgrid%q_x2(iv,i,j+1)) + &
-        lgrid%q_cor(iv,i+1,j) + lgrid%q_cor(iv,i,j+1) + lgrid%q_cor(iv,i+1,j+1) &
-        )
-#elif defined(USE_DIFF2)
         Dmq(iv) = lgrid%inv_dx1*(-rp3*lgrid%q_x1(iv,i,j)+rp4*lgrid%q_cc(iv,i,j)-lgrid%q_x1(iv,i+1,j))
-#endif
 
        end do
 
@@ -1232,15 +1214,7 @@ contains
 
        do iv=1,nvars
 
-#ifdef USE_DIFF1
-        Dpq(iv) = oquart*lgrid%inv_dx2*( &
-        rp4*(lgrid%q_x1(iv,i,j-1)-rp9*lgrid%qbar_cc(iv,i,j-1)+lgrid%q_x1(iv,i+1,j-1)) + &
-        lgrid%q_cor(iv,i,j)+lgrid%q_cor(iv,i+1,j)+lgrid%q_cor(iv,i,j-1)+lgrid%q_cor(iv,i+1,j-1) + &
-        rp8*(lgrid%q_x2(iv,i,j-1)+rp2*lgrid%q_x2(iv,i,j)) &
-        )
-#elif defined(USE_DIFF2)
         Dpq(iv) = lgrid%inv_dx2*(rp3*lgrid%q_x2(iv,i,j)-rp4*lgrid%q_cc(iv,i,j-1)+lgrid%q_x2(iv,i,j-1))
-#endif
 
        end do
 
@@ -1309,15 +1283,7 @@ contains
 
        do iv=1,nvars
 
-#ifdef USE_DIFF1       
-        Dmq(iv) = -oquart*lgrid%inv_dx2*( &
-        rp4*(lgrid%q_x1(iv,i,j)-rp9*lgrid%qbar_cc(iv,i,j)+lgrid%q_x1(iv,i+1,j)) + &
-        lgrid%q_cor(iv,i,j)+lgrid%q_cor(iv,i+1,j)+lgrid%q_cor(iv,i,j+1)+lgrid%q_cor(iv,i+1,j+1) + &
-        rp8*(rp2*lgrid%q_x2(iv,i,j)+lgrid%q_x2(iv,i,j+1)) &
-        )
-#elif defined(USE_DIFF2)
         Dmq(iv) = lgrid%inv_dx2*(-rp3*lgrid%q_x2(iv,i,j)+rp4*lgrid%q_cc(iv,i,j)-lgrid%q_x2(iv,i,j+1))
-#endif
 
        end do
 
