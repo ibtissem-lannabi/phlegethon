@@ -1006,6 +1006,11 @@ contains
      end if
 #endif
 
+#ifdef USE_INTERNAL_BOUNDARIES
+     ! TODO: here we impose internal solid boundary conditions
+     ! same implementation as reflective BC, but the boundary here is the
+     ! interface between solid and fluid cells (requires lgrid%is_solid(i,j) as it is done in app.F90?)
+#endif
 
      !---------------------------------------------------------------------------------------!
 
@@ -1197,7 +1202,15 @@ contains
                                      (16.0_rp/36.0_rp)*(rhovx2_cc * lgrid%grav_cc(2,i,j))   
 
 #endif
-
+#ifdef ADD_EINT_RHS
+       ! we apply a simpson 1/3 rule on rho*e: corner + face + cell-center contributions
+       lgrid%res_cc(i_rhoe,i,j)   = lgrid%res_cc(i_rhoe,i,j) + &
+                            (1.0_rp/36.0_rp) * (lgrid%q_cor(i_rhoe,i,j) + lgrid%q_cor(i_rhoe,i+1,j) + &
+                                                lgrid%q_cor(i_rhoe,i,j+1) + lgrid%q_cor(i_rhoe,i+1,j+1)) + &
+                            (4.0_rp/36.0_rp) * (lgrid%q_x1(i_rhoe,i,j) + lgrid%q_x1(i_rhoe,i+1,j) ) + &
+                            (4.0_rp/36.0_rp) * (lgrid%q_x2(i_rhoe,i,j) + lgrid%q_x2(i_rhoe,i,j+1) ) + &
+                            (16.0_rp/36.0_rp)*(lgrid%q_cc(i_rhoe,i,j))
+#endif
                                                                                              
       end do
      end do
@@ -1471,7 +1484,10 @@ contains
        lgrid%res_x1(i_rhoe,i,j)   = lgrid%res_x1(i_rhoe,i,j) - &
                                      lgrid%q_x1(i_rhovx1,i,j) * lgrid%grav_x1(1,i,j) - &
                                      lgrid%q_x1(i_rhovx2,i,j) * lgrid%grav_x1(2,i,j)
-#endif                                      
+#endif
+#ifdef ADD_EINT_RHS
+       lgrid%res_x1(i_rhoe,i,j)   =  lgrid%res_x1(i_rhoe,i,j) + lgrid%q_x1(i_rhoe,i,j)
+#endif       
       end do
      end do
 
@@ -1747,6 +1763,9 @@ contains
 
 #endif                                                                 
 
+#ifdef ADD_EINT_RHS
+       lgrid%res_x2(i_rhoe,i,j)   =  lgrid%res_x2(i_rhoe,i,j) + lgrid%q_x2(i_rhoe,i,j)
+#endif  
       end do
      end do
 
@@ -2175,7 +2194,10 @@ contains
        lgrid%res_cor(i_rhoe,i,j)   = lgrid%res_cor(i_rhoe,i,j) - &
                                       lgrid%q_cor(i_rhovx1,i,j) * lgrid%grav_cor(1,i,j) - &
                                       lgrid%q_cor(i_rhovx2,i,j) * lgrid%grav_cor(2,i,j)      
-#endif                                                               
+#endif
+#ifdef ADD_EINT_RHS
+       lgrid%res_cor(i_rhoe,i,j)   = lgrid%res_cor(i_rhoe,i,j) + lgrid%q_cor(i_rhoe,i,j)
+#endif  
       end do
      end do
  
